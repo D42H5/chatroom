@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
         if((recv(sockfd, inbuf, MAXDATASIZE - 1, 0)) < 0)
         {
             perror("recv");
-            exit(EXIT_FAILURE);
+            exit(0);
         }
 
         inbuf[MAXDATASIZE] = '\0';

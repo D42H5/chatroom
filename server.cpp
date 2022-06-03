@@ -173,6 +173,7 @@ int main()
                         exit(0);
                     }
                 }
+                inbuf[0] = '\0';
 
                 // Receive message from client
                 if (recv(new_fd, inbuf, MAXDATASIZE - 1, 0) < 0)
@@ -181,10 +182,12 @@ int main()
                     exit(0);
                 }
                 inbuf[MAXDATASIZE] = '\0';
-                if (strcmp(inbuf, "Bye") != 0)
-                    cout << "Client: " << inbuf << endl;
-                else
+                cout << "Client: " << inbuf << endl;
+                if (strcmp(inbuf, "Bye") == 0)
+                {
+                    cout << "Client has ended this conversation" << endl;
                     break;
+                }
             }
 
             // Close new_fd and exit child process
