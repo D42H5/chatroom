@@ -174,7 +174,6 @@ int main()
                         exit(0);
                     }
                 }
-                inbuf[0] = '\0';
 
                 // Receive message from client
                 if (recv(new_fd, inbuf, MAXDATASIZE - 1, 0) < 0)
