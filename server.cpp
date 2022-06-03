@@ -152,8 +152,9 @@ int main()
             while(1)
             {
                 // Send initial message (with info on how to end chat)
-                if (count++ == 0)
+                if (count == 0)
                 {
+                    count++;
                     char temp[] = "Welcome to the chatroom! Enter the word 'Bye' to stop chatting!\n";
                     if (send(new_fd, temp, sizeof temp, 0) < 0)
                     {
