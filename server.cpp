@@ -79,7 +79,7 @@ int main()
     {
         if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0)
         {
-            perror("server: socket");
+            perror("socket");
             continue;
         }
 
@@ -91,7 +91,7 @@ int main()
         
         if (bind(sockfd, p->ai_addr, p->ai_addrlen) < 0)
         {
-            perror("server: bind");
+            perror("bind");
             continue;
         }
 

@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
 
     if (argc != 2)
     {
-        cout << "Usage: ./client <hostname>" << endl;
+        cout << "Usage: ./client.out <hostname>" << endl;
         exit(1);
     }
 
@@ -58,13 +58,13 @@ int main(int argc, char *argv[])
     {
         if((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0)
         {
-            perror("client: socket");
+            perror("socket");
             continue;
         }
 
         if  (connect(sockfd, p->ai_addr, p->ai_addrlen) < 0)
         {
-            perror("client: connect");
+            perror("connect");
             continue;
         }
 
