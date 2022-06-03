@@ -18,7 +18,7 @@ Most of what I learned in this file (and have down) comes straight from:
 #include <sys/wait.h>
 using namespace std;
 
-#define PORT "9191"     // port client will be connecting to
+#define PORT "20510"     // port client will be connecting to
 
 #define MAXDATASIZE 100     // max number of bytes we can send
 
