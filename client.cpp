@@ -94,10 +94,10 @@ int main(int argc, char *argv[])
 
         inbuf[MAXDATASIZE] = '\0';
         // output data
-        cout << "From server: " << inbuf << endl;
+        cout << "Server: " << inbuf << endl;
 
         // Send message to client
-        cout << "Enter a message to send to server: ";
+        cout << "To server: ";
         cin >> outbuf;
         if (send(sockfd, outbuf, sizeof outbuf, 0) < 0)
         {

@@ -143,7 +143,7 @@ int main()
 
         // print who connection is to
         inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&their_addr), s, sizeof s);
-        cout << "Server: got connection from" << s << endl;
+        cout << "Server: got connection from " << s << endl;
 
         if(!fork()) // make child process
         {
@@ -165,7 +165,7 @@ int main()
                 else
                 {
                     // Send message to client
-                    cout << "Enter a message to send to client: ";
+                    cout << "To client: ";
                     cin >> outbuf;
                     if (send(new_fd, outbuf, sizeof outbuf, 0) < 0)
                     {
@@ -182,7 +182,7 @@ int main()
                 }
                 inbuf[MAXDATASIZE] = '\0';
                 if (strcmp(inbuf, "Bye") != 0)
-                    cout << "From client: " << inbuf << endl;
+                    cout << "Client: " << inbuf << endl;
                 else
                     break;
             }
