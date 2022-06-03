@@ -95,6 +95,7 @@ int main(int argc, char *argv[])
         inbuf[MAXDATASIZE] = '\0';
         // output data
         cout << "Server: " << inbuf << endl;
+        
 
         // Send message to client
         cout << "To server: ";
