@@ -33,8 +33,9 @@ void *get_in_addr(struct sockaddr *sa)
 
 int main(int argc, char *argv[])
 {
-    int sockfd, numbytes;
-    char buf[MAXDATASIZE];
+    int sockfd;
+    char inbuf[MAXDATASIZE];
+    char outbuf[MAXDATASIZE];
     struct addrinfo hints, *servinfo, *p;
     char s[INET6_ADDRSTRLEN];
 
@@ -82,17 +83,31 @@ int main(int argc, char *argv[])
 
     freeaddrinfo(servinfo); // all done with this now
 
-    // receive data from server
-    if((numbytes = recv(sockfd, buf, MAXDATASIZE - 1, 0)) < 0)
+    while(1)
     {
-        perror("recv");
-        exit(EXIT_FAILURE);
+        // receive data from server
+        if((recv(sockfd, inbuf, MAXDATASIZE - 1, 0)) < 0)
+        {
+            perror("recv");
+            exit(EXIT_FAILURE);
+        }
+
+        inbuf[MAXDATASIZE] = '\0';
+        // output data
+        cout << "From server: " << inbuf << endl;
+
+        // Send message to client
+        cout << "Enter a message to send to server: ";
+        cin >> outbuf;
+        if (send(sockfd, outbuf, sizeof outbuf, 0) < 0)
+        {
+            perror("send");
+            exit(0);
+        } 
+
+        if (strcmp(outbuf, "Bye") == 0)
+            break;                   
     }
-
-    buf[MAXDATASIZE] = '\0';
-
-    // output data
-    cout << "Client received: " << buf << endl;
 
     close(sockfd);
 

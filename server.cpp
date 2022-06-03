@@ -31,6 +31,8 @@ using namespace std;
 
 #define BACKLOG 10      // number of pending connections queue will allow
 
+#define MAXDATASIZE 100   // max size of data to send/receive
+
 void sigchld_handler(int s)
 {
     // waitpid() might overwrite errno, so we save and restore it:
@@ -62,6 +64,8 @@ int main()
     struct sigaction sa;
     int yes = 1;
     char s[INET6_ADDRSTRLEN];
+    char inbuf[MAXDATASIZE];
+    char outbuf[MAXDATASIZE];
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_UNSPEC;     // Let computer tell which family to use
@@ -144,15 +148,53 @@ int main()
         if(!fork()) // make child process
         {
             close(sockfd);  // child doesn't need listener socket
-            if (send(new_fd, "Hello, world!", 13, 0) < 0)
-                perror("send");
+            int count {0};
+            while(1)
+            {
+                // Send initial message (with info on how to end chat)
+                if (count++ == 0)
+                {
+                    char temp[] = "Welcome to the chatroom! Enter the word 'Bye' to stop chatting!\n";
+                    if (send(new_fd, temp, sizeof temp, 0) < 0)
+                    {
+                        perror("send");
+                        exit(0);
+                    }
+                }
+                // Else do normal send messages
+                else
+                {
+                    // Send message to client
+                    cout << "Enter a message to send to client: ";
+                    cin >> outbuf;
+                    if (send(new_fd, outbuf, sizeof outbuf, 0) < 0)
+                    {
+                        perror("send");
+                        exit(0);
+                    }
+                }
+
+                // Receive message from client
+                if (recv(new_fd, inbuf, MAXDATASIZE - 1, 0) < 0)
+                {
+                    perror("recv");
+                    exit(0);
+                }
+                inbuf[MAXDATASIZE] = '\0';
+                if (strcmp(inbuf, "Bye") != 0)
+                    cout << "From client: " << inbuf << endl;
+                else
+                    break;
+            }
+
+            // Close new_fd and exit child process
             close(new_fd);
             exit(0);
         }
         close(new_fd);
     }
 
-
+    close(sockfd);
 
     return 0;
 }
