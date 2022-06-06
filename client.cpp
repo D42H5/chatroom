@@ -31,6 +31,27 @@ void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6 *)sa)->sin6_addr);
 }
 
+int sendall(int s, char *buf, int *len)
+{
+    int total {0};      // num bytes sent
+    int bytesleft = *len;   // num bytes left to send
+    int n;
+
+    while (total < *len)
+    {
+        if ((n = send(s, buf+total, bytesleft, 0)) < 0)
+            break;
+        total += n;
+        bytesleft -= n;
+    } 
+
+    *len = total;      // return num bytes sent (can be used for checking in main)
+
+    return (n == -1) ? -1 : 0;  // return -1 on failure, 0 on success
+}
+
+
+
 int main(int argc, char *argv[])
 {
     int sockfd;
@@ -100,9 +121,9 @@ int main(int argc, char *argv[])
         // Send message to client
         cout << "To server: ";
         cin >> outbuf;
-        if (send(sockfd, outbuf, sizeof outbuf, 0) < 0)
+        if (sendall(sockfd, outbuf, sizeof outbuf, 0) < 0)
         {
-            perror("send");
+            perror("sendall");
             exit(0);
         } 
 
