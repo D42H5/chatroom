@@ -16,6 +16,9 @@ Most of what I learned in this file (and have down) comes straight from:
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
+#include <sys/uio.h>
+#include <string>
+#include <vector>
 using namespace std;
 
 #define PORT "20510"     // port client will be connecting to
@@ -31,32 +34,44 @@ void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6 *)sa)->sin6_addr);
 }
 
-int sendall(int s, char *buf, int *len)
+int sendall(int s, string &buf)
 {
-    int total {0};      // num bytes sent
-    int bytesleft = *len;   // num bytes left to send
+    // int total {0};      // num bytes sent
+    // int bytesleft {buf.size()};   // num bytes left to send
     int n;
 
-    while (total < *len)
+    vector<char> v { buf.c_str(), buf.c_str() + buf.size() };
+    uint32_t len = v.size();
+    struct iovec iv[2] = { { &len, sizeof(len) }, { &v[0], len } };
+    if( (n = writev(s, iv, 2)) < 0)
     {
-        if ((n = send(s, buf+total, bytesleft, 0)) < 0)
-            break;
-        total += n;
-        bytesleft -= n;
-    } 
-
-    *len = total;      // return num bytes sent (can be used for checking in main)
+        perror("writev");
+    }
+    // *len = total;      // return num bytes sent (can be used for checking in main)
 
     return (n == -1) ? -1 : 0;  // return -1 on failure, 0 on success
 }
 
+int recvall(int s, string &buf)
+{
+    uint32_t len;
+    int n;
+
+    recv(s, &len, sizeof(len), 0);
+
+    vector<char> v (len + 1);
+    n = recv(s, &v[0], len, 0);
+    v[len + 1] = '\0';
+
+    buf = &v[0];
+
+    return (n == -1) ? -1 : 0;
+}
 
 
 int main(int argc, char *argv[])
 {
     int sockfd;
-    char inbuf[MAXDATASIZE];
-    char outbuf[MAXDATASIZE];
     struct addrinfo hints, *servinfo, *p;
     char s[INET6_ADDRSTRLEN];
 
@@ -106,29 +121,28 @@ int main(int argc, char *argv[])
 
     while(1)
     {
+        string inbuf;
+        string outbuf;
+
         // receive data from server
-        if((recv(sockfd, inbuf, MAXDATASIZE - 1, 0)) < 0)
+        if((recvall(sockfd, inbuf)) < 0)
         {
             perror("recv");
             exit(0);
         }
 
-        inbuf[MAXDATASIZE] = '\0';
         // output data
         cout << "Server: " << inbuf << endl;
         
 
         // Send message to client
         cout << "To server: ";
-        cin >> outbuf;
-        if (sendall(sockfd, outbuf, sizeof outbuf, 0) < 0)
+        getline(cin, outbuf);
+        if (sendall(sockfd, outbuf) < 0)
         {
             perror("sendall");
             exit(0);
-        } 
-
-        if (strcmp(outbuf, "Bye") == 0)
-            break;                   
+        }               
     }
 
     close(sockfd);

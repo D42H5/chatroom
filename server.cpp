@@ -23,8 +23,11 @@ https://stackoverflow.com/questions/44610978/popen-writes-output-of-command-exec
 #include <arpa/inet.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <sys/uio.h>
 #include <string>
 #include <array>
+#include <vector>
+#include <string>
 using namespace std;
 
 #define PORT "20510"     // port server will be hosted on
@@ -55,6 +58,41 @@ void *get_in_addr(struct sockaddr *sa)
 // function to print out public ip address for clients to use
 void getIP(void);
 
+int sendall(int s, string &buf)
+{
+    // int total {0};      // num bytes sent
+    // int bytesleft {buf.size()};   // num bytes left to send
+    int n;
+
+    vector<char> v { buf.c_str(), buf.c_str() + buf.size() };
+    uint32_t len = v.size();
+    struct iovec iv[2] = { { &len, sizeof(len) }, { &v[0], len } };
+    if( (n = writev(s, iv, 2)) < 0)
+    {
+        perror("writev");
+    }
+    // *len = total;      // return num bytes sent (can be used for checking in main)
+
+    return (n == -1) ? -1 : 0;  // return -1 on failure, 0 on success
+}
+
+int recvall(int s, string &buf)
+{
+    uint32_t len;
+    int n;
+
+    recv(s, &len, sizeof(len), 0);
+
+    vector<char> v (len + 1);
+    n = recv(s, &v[0], len, 0);
+    v[len + 1] = '\0';
+
+    buf = &v[0];
+
+    return (n == -1) ? -1 : 0;
+}
+
+
 int main()
 {
     int sockfd, new_fd; // listen on sockfd, new connecdtion on new_fd
@@ -64,8 +102,6 @@ int main()
     struct sigaction sa;
     int yes = 1;
     char s[INET6_ADDRSTRLEN];
-    char inbuf[MAXDATASIZE];
-    char outbuf[MAXDATASIZE];
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_UNSPEC;     // Let computer tell which family to use
@@ -133,6 +169,8 @@ int main()
 
     while(1) // accept() loop!
     {
+        string inbuf;
+        string outbuf;
         sin_size = sizeof their_addr;
         new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
         if (new_fd < 0)
@@ -148,42 +186,40 @@ int main()
         if(!fork()) // make child process
         {
             close(sockfd);  // child doesn't need listener socket
+
             int count {0};
+            string temp {"Welcome to the chatroom! Enter the word 'Bye' to stop chatting!\n"};
+            if (sendall(new_fd, temp) < 0)
+            {
+                perror("sendall");
+                exit(0);
+            }
             while(1)
             {
-                // Send initial message (with info on how to end chat)
+                // Send message to client
                 if (count == 0)
-                {
-                    count++;
-                    char temp[] = "Welcome to the chatroom! Enter the word 'Bye' to stop chatting!\n";
-                    if (send(new_fd, temp, sizeof temp, 0) < 0)
-                    {
-                        perror("send");
-                        exit(0);
-                    }
-                }
-                // Else do normal send messages
+                    { count++; }
                 else
                 {
-                    // Send message to client
                     cout << "To client: ";
-                    cin >> outbuf;
-                    if (send(new_fd, outbuf, sizeof outbuf, 0) < 0)
+                    getline(cin, outbuf);
+                    if (sendall(new_fd, outbuf) < 0)
                     {
                         perror("send");
                         exit(0);
                     }
                 }
+            
 
                 // Receive message from client
-                if (recv(new_fd, inbuf, MAXDATASIZE - 1, 0) < 0)
+                if (recvall(new_fd, inbuf) < 0)
                 {
                     perror("recv");
                     exit(0);
                 }
-                inbuf[MAXDATASIZE] = '\0';
+
                 cout << "Client: " << inbuf << endl;
-                if (strcmp(inbuf, "Bye") == 0)
+                if (inbuf == "Bye")
                 {
                     cout << "Client has ended this conversation" << endl;
                     break;
